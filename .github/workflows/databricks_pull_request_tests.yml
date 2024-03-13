@@ -20,7 +20,7 @@ jobs:
          # Trigger notebook execution on Databricks
          response=$(curl -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
            -H "Content-Type: application/json" \
-           --data "{\"run_name\": \"pytest_transformation\", \"existing_cluster_id\": \"$CLUSTER_ID\", \"notebook_task\": { \"notebook_path\": \"$NOTEBOOK_PATH\" }}" \
+           --data "{\"run_name\": \"testing_job\", \"existing_cluster_id\": \"$CLUSTER_ID\", \"notebook_task\": { \"notebook_path\": \"$NOTEBOOK_PATH\" }}" \
            "https://$DATABRICKS_HOST/api/2.0/jobs/runs/submit")
          echo "Response from Databricks: $response"
          # Extract run_id from the response
