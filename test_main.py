@@ -1,4 +1,12 @@
 # Databricks notebook source
+# MAGIC %pip install pytest
+
+# COMMAND ----------
+
+# MAGIC %pip install ansi2html
+
+# COMMAND ----------
+
 import pytest
 import os
 import sys
@@ -23,18 +31,18 @@ print(os.getcwd())
 # Skip writing pyc files on a readonly filesystem.
 sys.dont_write_bytecode = True
 
-original_stdout = sys.stdout
-captured_output = StringIO()
-sys.stdout = captured_output
+#original_stdout = sys.stdout
+#captured_output = StringIO()
+#sys.stdout = captured_output
 
 pytest.main([".", "-v", "-p", "no:cacheprovider"])
 
-sys.stdout = original_stdout
-pytest_output = captured_output.getvalue()
+#sys.stdout = original_stdout
+#pytest_output = captured_output.getvalue()
 
 # Remove ANSI escape codes using regular expressions
-ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-cleaned_output = ansi_escape.sub('', pytest_output)
+#ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+#cleaned_output = ansi_escape.sub('', pytest_output)'''
 
 
 
