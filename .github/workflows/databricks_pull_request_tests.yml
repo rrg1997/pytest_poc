@@ -1,0 +1,80 @@
+name: Pytest Transformation Workflow
+on:
+ pull_request:
+   branches:
+     - main
+jobs:
+ pytest_job:
+   runs-on: ubuntu-latest
+   steps:
+     - name: Checkout Repository
+       uses: actions/checkout@v2
+     - name: Run Pytest on Databricks
+       env:
+         DATABRICKS_TOKEN: 'dapi9d37b50cb97942ac31744ed1d42ce5d7-3'
+         DATABRICKS_HOST: 'adb-8344460307343477.17.azuredatabricks.net'
+         CLUSTER_ID: '0307-114857-zts2s9r9'
+         NOTEBOOK_PATH: '/Workspace/Repos/rushikesh.ghadmode@i2econsulting.com/pytest_poc/test_main'
+         TIMEOUT_SECONDS: 300
+       run: |
+         # Trigger notebook execution on Databricks
+         response=$(curl -X POST -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+           -H "Content-Type: application/json" \
+           --data "{\"run_name\": \"testing_job\", \"existing_cluster_id\": \"$CLUSTER_ID\", \"notebook_task\": { \"notebook_path\": \"$NOTEBOOK_PATH\" }}" \
+           "https://$DATABRICKS_HOST/api/2.0/jobs/runs/submit")
+         echo "Response from Databricks: $response"
+         # Extract run_id from the response
+         run_id=$(echo "$response" | jq -r '.run_id')
+         # Check for errors in notebook submission
+         if [ -z "$run_id" ]; then
+           echo "Failed to submit notebook for execution."
+           exit 1
+         fi
+         # Initialize a timer
+         start_time=$(date +%s)
+         # Wait for notebook execution to complete
+         while true; do
+           # Fetch the current notebook status
+           current_status=$(curl -X GET -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+             "https://$DATABRICKS_HOST/api/2.0/jobs/runs/get?run_id=$run_id" | jq -r '.state.result_state')
+           #echo "Current notebook status: $current_status"
+           # Check if the status indicates completion
+           if [ "$current_status" == "SUCCESS" ]; then
+             echo "Pytest Transformation notebook executed successfully."
+             break
+           elif [ "$current_status" == "FAILED" ] || [ "$current_status" == "TIMED_OUT" ] || [ "$current_status" == "TERMINATED" ]; then
+             echo "Pytest Transformation notebook execution failed."
+             exit 1
+           else
+             # Check for timeout
+             current_time=$(date +%s)
+             elapsed_time=$((current_time - start_time))
+             if [ $elapsed_time -gt $TIMEOUT_SECONDS ]; then
+               echo "Timeout reached. Pytest Transformation notebook execution is taking too long."
+               exit 1
+             fi
+             # Add a delay before checking the status again
+             sleep 10
+           fi
+         done
+ 
+         output_log="$GITHUB_WORKSPACE/test_output.log"
+         echo "Capturing Databricks notebook stdout logs to $output_log"
+         # Save Databricks Logs as Artifact
+ 
+         # Get notebook output and append to log file
+         logs=$(curl -X GET -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "https://$DATABRICKS_HOST/api/2.1/jobs/runs/get-output?run_id=$run_id" | jq -r '.notebook_output')
+         echo "Notebook Output: $logs"
+         echo "$logs" >> "$output_log"
+
+         # Check if any tests failed
+         if echo "$logs" | grep -q "FAILED"; then
+           echo "Some tests failed. Preventing merge."
+           exit 1
+         fi
+     - name: Upload Test Results
+       uses: actions/upload-artifact@v2
+       with:
+         name: pytest-results
+         path: test_output.log
