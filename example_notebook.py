@@ -1,31 +1,50 @@
 # Databricks notebook source
-import pytest
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
-from pyspark.sql import SQLContext
-from pyspark.sql.types import StructType, StructField, StringType
-spark = SparkSession.builder.appName("Pytest-POC").getOrCreate()
-
-df=spark.read.format('delta').option('header','true').load('dbfs:/user/hive/warehouse/covid_data')
-df.printSchema()
+# MAGIC %pip install pytest
 
 # COMMAND ----------
 
+
+
 import pytest
-from pyspark.sql import SparkSession
+import os
+import sys
+from io import StringIO
+import re
+ 	
 
-def test_table_existenece():
-    spark = SparkSession.builder.getOrCreate()
-    database_name = "default"
-    table_name1 = "covid_data"
-    tables = spark.catalog.listTables(database_name)
-    table_exists = False
 
-    for table in tables:
-        if table.name == table_name1:
-            table_exists = True
-            break
 
-    assert table_exists, F"INVALID TABLE: The '{table_name1}' table does not exist in the '{database_name}' database ..."
-    print("Running Pytest Test Cases...")
-pytest.main(["-v"])
+repo_name = "pytest_poc"
+
+# Get the path to this notebook, for example "/Workspace/Repos/{username}/{repo-name}".
+notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+
+# Get the repo's root directory name.
+repo_root = os.path.dirname(os.path.dirname(notebook_path))
+
+# Prepare to run pytest from the repo.
+os.chdir(f"/Workspace/{repo_root}/{repo_name}")
+print(os.getcwd())
+
+# Skip writing pyc files on a readonly filesystem.
+sys.dont_write_bytecode = True
+
+original_stdout = sys.stdout
+captured_output = StringIO()
+sys.stdout = captured_output
+
+pytest.main([".", "-v", "-p", "no:cacheprovider"])
+
+sys.stdout = original_stdout
+pytest_output = captured_output.getvalue()
+
+# Remove ANSI escape codes using regular expressions
+ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+cleaned_output = ansi_escape.sub('', pytest_output)
+
+
+
+
+# COMMAND ----------
+
+dbutils.notebook.exit(cleaned_output)
