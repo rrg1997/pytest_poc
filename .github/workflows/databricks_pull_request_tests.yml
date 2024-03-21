@@ -14,7 +14,7 @@ jobs:
          DATABRICKS_TOKEN: 'dapi9d37b50cb97942ac31744ed1d42ce5d7-3'
          DATABRICKS_HOST: 'adb-8344460307343477.17.azuredatabricks.net'
          CLUSTER_ID: '0307-114857-zts2s9r9'
-         NOTEBOOK_PATH: '/Workspace/Repos/rushikesh.ghadmode@i2econsulting.com/pytest_poc/test_main'
+         NOTEBOOK_PATH: '/Workspace/Repos/rushikesh.ghadmode@i2econsulting.com/pytest_poc/example_notebook'
          TIMEOUT_SECONDS: 300
        run: |
          # Trigger notebook execution on Databricks
