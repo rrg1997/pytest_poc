@@ -12,7 +12,7 @@ def spark():
         .master("local[2]") \
         .getOrCreate()
 
-def test_table_exists(spark, database_name, table_name):
+def test_table_exists(spark, default, covid_data):
     """Tests if a table exists in the specified database
 
     Args:
